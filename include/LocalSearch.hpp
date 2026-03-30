@@ -37,6 +37,8 @@ public:
     void improve();
     virtual optional<Move> chooseMove() = 0;
     void changeSolution(const Move &move);
+    virtual void setMoveSet() = 0;
+    virtual void updateMoveSet(const Move &move) = 0;
 
     int calculateLength();
     int calculateScore();

@@ -13,6 +13,7 @@ using namespace filesystem;
 
 void LocalSearch::improve()
 {
+    setMoveSet();
     bool hasImproved = true;
     while (hasImproved)
     {
@@ -24,6 +25,7 @@ void LocalSearch::improve()
         {
             hasImproved = true;
             changeSolution(*bestMove);
+            updateMoveSet(*bestMove);
         }
     }
 }
