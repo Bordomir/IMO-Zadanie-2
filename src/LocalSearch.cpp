@@ -1,5 +1,8 @@
 #include "../include/LocalSearch.hpp"
 
+#include <optional>
+#include <vector>
+#include <algorithm>
 #include <print>
 #include <filesystem>
 #include <format>
@@ -8,6 +11,42 @@
 using namespace std;
 using namespace filesystem;
 
+void LocalSearch::improve()
+{
+    bool hasImproved = true;
+    while (hasImproved)
+    {
+        hasImproved = false;
+        
+        optional<Move> bestMove = chooseMove();
+        
+        if(bestMove)
+        {
+            hasImproved = true;
+            changeSolution(*bestMove);
+        }
+    }
+}
+
+void LocalSearch::changeSolution(const Move &bestMove)
+{
+    // TODO: Test this function, especially SwapEdges
+    switch (bestMove.type)
+    {
+    case MoveType::InsertNode:
+        solution.insert(solution.begin() + *bestMove.node2 + 1, bestMove.node1);
+        break;
+    case MoveType::RemoveNode:
+        solution.erase(solution.begin() + bestMove.node1);
+        break;
+    case MoveType::SwapNodes:
+        swap(solution[bestMove.node1], solution[*bestMove.node2]);
+        break;
+    case MoveType::SwapEdges:
+        reverse(solution.begin() + bestMove.node1 + 1, solution.begin() + *bestMove.node2 + 1);
+        break;
+    }
+}
 int LocalSearch::calculateLength()
 {
     int score = 0;
