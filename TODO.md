@@ -9,6 +9,7 @@
                 changeSolution(move)
                 Virtual Method updateMoveSet(move)
         Until improvement is done
+    implement method for calculating deltaScore for different moveTypes 
 
 
 - Class RandomLocalSearch
