@@ -3,6 +3,8 @@
 #include <string>
 #include <optional>
 
+#include <print>
+
 using namespace std;
 
 string RandomLocalSearch::getAlgorithmName()
@@ -12,6 +14,7 @@ string RandomLocalSearch::getAlgorithmName()
 void RandomLocalSearch::setMoveSet()
 {
     startTime = chrono::high_resolution_clock::now();
+    solutionScore = bestSolutionScore;
     inSolution = vector<int>(data->numNodes, -1);
     for (size_t i = 0; i < solution.size(); i++)
         inSolution[solution[i]] = i;
@@ -24,7 +27,10 @@ optional<Move> RandomLocalSearch::chooseMove()
     if (elapsedTime >= timeLimit)
         return nullopt;
 
-    bool isChangingNodeCount = randomInt(0, 1);
+    // Zliczanie liczby wszystkich ruchów w celu znormalizowania prawdopodobieństwa wyboru ruchu zmieniającego liczbę wierzchołków i ruchu zamieniającego kolejność wierzchołków
+    int totalMoves = data->numNodes + (solution.size() * (solution.size() - 1)) / 2; 
+
+    bool isChangingNodeCount = randomInt(1, totalMoves) <= data->numNodes;
     if (solution.size() < 4)
         isChangingNodeCount = true;
 
@@ -100,10 +106,14 @@ void RandomLocalSearch::updateMoveSet(const Move &move)
         }
         case MoveType::SwapEdges:
         {
+            println("inSolution before update:\n{}", inSolution);
+            println("Updating move:");
+            move.print();
             for (int i = move.node1 + 1; i <= *move.node2; i++)
             {
                 inSolution[solution[i]] = i;
             }
+            println("inSolution after update:\n{}", inSolution);
             break;
         }
     }

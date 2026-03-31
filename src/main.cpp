@@ -12,6 +12,8 @@
 #include "../include/Solver.hpp"
 #include "../include/RandomSolver.hpp"
 #include "../include/KRegret.hpp"
+#include "../include/LocalSearch.hpp"
+#include "../include/RandomLocalSearch.hpp"
 
 using namespace std;
 
@@ -39,32 +41,38 @@ int main()
     vector<unique_ptr<Solver>> solvers;
     solvers.emplace_back(make_unique<RandomSolver>(dataA));
     solvers.emplace_back(make_unique<KRegret>(dataA, startNode, 2));
-    solvers.emplace_back(make_unique<KRegret>(dataA, startNode, 2, -0.2));
 
-    int numRuns = 200;
-    vector<Statistic> lengthStatistics;
-    vector<Statistic> scoreStatistics;
-    mt19937 rng{random_device{}()};
-    // DataA
-    for(auto &solver : solvers)
-    {
-        auto [statL, statS] = runTests(solver, numRuns, rng, "DataA");
-        lengthStatistics.push_back(statL);
-        scoreStatistics.push_back(statS);
-        solver->data = &dataB;
-    }    
-    // DataB
-    for(auto &solver : solvers)
-    {
-        auto [statL, statS] = runTests(solver, numRuns, rng, "DataB");
-        lengthStatistics.push_back(statL);
-        scoreStatistics.push_back(statS);
-    }
+    solvers[0]->solve();
 
-    println("Length statistics:");
-    printStatistics(lengthStatistics);
-    println("Score statistics:");
-    printStatistics(scoreStatistics);
+    vector<unique_ptr<LocalSearch>> localSearches;
+    localSearches.emplace_back(make_unique<RandomLocalSearch>(dataA, vector<int>{0, 1, 2, 3, 4}, MoveType::SwapEdges, 50));
+
+    localSearches[0]->improve();
+
+    // int numRuns = 200;
+    // vector<Statistic> lengthStatistics;
+    // vector<Statistic> scoreStatistics;
+    // mt19937 rng{random_device{}()};
+    // // DataA
+    // for(auto &solver : solvers)
+    // {
+    //     auto [statL, statS] = runTests(solver, numRuns, rng, "DataA");
+    //     lengthStatistics.push_back(statL);
+    //     scoreStatistics.push_back(statS);
+    //     solver->data = &dataB;
+    // }    
+    // // DataB
+    // for(auto &solver : solvers)
+    // {
+    //     auto [statL, statS] = runTests(solver, numRuns, rng, "DataB");
+    //     lengthStatistics.push_back(statL);
+    //     scoreStatistics.push_back(statS);
+    // }
+
+    // println("Length statistics:");
+    // printStatistics(lengthStatistics);
+    // println("Score statistics:");
+    // printStatistics(scoreStatistics);
 
     return 0;
 }

@@ -140,7 +140,11 @@ void LocalSearch::changeSolution(const Move &bestMove)
         }
         case MoveType::SwapEdges:
         {
+            println("Solution before change:\n{}", solution);
+            println("Applying move:");
+            bestMove.print();
             reverse(solution.begin() + bestMove.node1 + 1, solution.begin() + *bestMove.node2 + 1);
+            println("Solution after change:\n{}", solution);
             break;
         }
     }

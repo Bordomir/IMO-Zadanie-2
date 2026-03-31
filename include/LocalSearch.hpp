@@ -1,6 +1,7 @@
 #pragma once
 
 #include <optional>
+#include <print>
 #include <vector>
 #include <string>
 
@@ -24,6 +25,11 @@ struct Move
     optional<int> deltaScore;
 
     Move(MoveType type, int node1, optional<int> node2 = nullopt, optional<int> deltaScore = nullopt) : type(type), node1(node1), node2(node2), deltaScore(deltaScore) {}
+    void print() const
+    {
+        println("type: {:<11} | node1: {:<3} | node2: {:<3}",
+            static_cast<int>(type), node1, *node2);
+    }
 };
 
 class LocalSearch
