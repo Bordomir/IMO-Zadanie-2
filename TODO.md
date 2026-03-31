@@ -36,6 +36,10 @@ DONE
     Run 100 times on every data instance
     
 
+ERRORS:
+ - Random SwapNodes wrong calculation? based on graph and score
+
+
 
 ### OPTIONAL:
 - Optimized moves calculation

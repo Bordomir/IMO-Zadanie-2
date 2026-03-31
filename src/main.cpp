@@ -14,6 +14,7 @@
 #include "../include/KRegret.hpp"
 #include "../include/LocalSearch.hpp"
 #include "../include/RandomLocalSearch.hpp"
+#include "../include/GreedyLocalSearch.hpp"
 
 using namespace std;
 
@@ -42,12 +43,66 @@ int main()
     solvers.emplace_back(make_unique<RandomSolver>(dataA));
     solvers.emplace_back(make_unique<KRegret>(dataA, startNode, 2));
 
-    solvers[0]->solve();
+    for (auto &solver : solvers)
+    {
+        solver->solve();
+        solver->saveToFile("DataA");
+        println("Solver algorithm: {} on data A", solver->getAlgorithmName());
+        solver->print();
 
+        solver->data = &dataB;
+    }
+    vector<int> solutionR = solvers[0]->solution;
+    vector<int> solutionKR = solvers[1]->solution;
+    
     vector<unique_ptr<LocalSearch>> localSearches;
-    localSearches.emplace_back(make_unique<RandomLocalSearch>(dataA, vector<int>{0, 1, 2, 3, 4}, MoveType::SwapEdges, 50));
+    localSearches.emplace_back(make_unique<RandomLocalSearch>(dataA, solutionR, MoveType::SwapNodes, 50));
+    localSearches.emplace_back(make_unique<RandomLocalSearch>(dataA, solutionR, MoveType::SwapEdges, 50));
+    localSearches.emplace_back(make_unique<GreedyLocalSearch>(dataA, solutionR, MoveType::SwapNodes));
+    localSearches.emplace_back(make_unique<GreedyLocalSearch>(dataA, solutionR, MoveType::SwapEdges));
 
-    localSearches[0]->improve();
+    // DataA
+    for (auto &localSearch : localSearches)
+    {
+        localSearch->improve();
+        localSearch->saveToFile("DataA_SolutionR");
+        println("Local search algorithm: {} on random solution from data A", localSearch->getAlgorithmName());
+        localSearch->print();
+
+        localSearch->solution = solutionKR;
+        localSearch->improve();
+        localSearch->saveToFile("DataA_SolutionKR");
+        println("Local search algorithm: {} on k-regret solution from data A", localSearch->getAlgorithmName());
+        localSearch->print();
+
+        localSearch->data = &dataB;
+    }
+
+    // DataB
+    for (auto &solver : solvers)
+    {
+        solver->solve();
+        solver->saveToFile("DataB");
+        println("Solver algorithm: {} on data B", solver->getAlgorithmName());
+        solver->print();
+    }
+    solutionR = solvers[0]->solution;
+    solutionKR = solvers[1]->solution;
+    
+    for (auto &localSearch : localSearches)
+    {
+        localSearch->solution = solutionR;
+        localSearch->improve();
+        localSearch->saveToFile("DataB_SolutionR");
+        println("Local search algorithm: {} on random solution from data B", localSearch->getAlgorithmName());
+        localSearch->print();
+
+        localSearch->solution = solutionKR;
+        localSearch->improve();
+        localSearch->saveToFile("DataB_SolutionKR");
+        println("Local search algorithm: {} on k-regret solution from data B", localSearch->getAlgorithmName());
+        localSearch->print();
+    }
 
     // int numRuns = 200;
     // vector<Statistic> lengthStatistics;

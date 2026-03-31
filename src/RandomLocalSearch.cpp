@@ -1,20 +1,22 @@
 #include "../include/RandomLocalSearch.hpp"
 
 #include <string>
+#include <format>
+#include <vector>
 #include <optional>
-
-#include <print>
 
 using namespace std;
 
 string RandomLocalSearch::getAlgorithmName()
 {
-    return "Random";
+    return format("Random_{}", neighbourhoodUsed == MoveType::SwapNodes ? "SwapNodes" : "SwapEdges");
 }
 void RandomLocalSearch::setMoveSet()
 {
+    solutionScore = calculateScore();
+    bestSolution = solution;
+    bestSolutionScore = solutionScore;
     startTime = chrono::high_resolution_clock::now();
-    solutionScore = bestSolutionScore;
     inSolution = vector<int>(data->numNodes, -1);
     for (size_t i = 0; i < solution.size(); i++)
         inSolution[solution[i]] = i;
@@ -25,7 +27,11 @@ optional<Move> RandomLocalSearch::chooseMove()
     auto currentTime = chrono::high_resolution_clock::now();
     auto elapsedTime = chrono::duration_cast<chrono::milliseconds>(currentTime - startTime).count();
     if (elapsedTime >= timeLimit)
+    {
+        solution = bestSolution;
+        solutionScore = bestSolutionScore;
         return nullopt;
+    }
 
     // Zliczanie liczby wszystkich ruchów w celu znormalizowania prawdopodobieństwa wyboru ruchu zmieniającego liczbę wierzchołków i ruchu zamieniającego kolejność wierzchołków
     int totalMoves = data->numNodes + (solution.size() * (solution.size() - 1)) / 2; 
@@ -51,7 +57,10 @@ optional<Move> RandomLocalSearch::chooseMove()
         else
         {
             bestMoveType = MoveType::InsertNode;
-            node2 = randomInt(0, solution.size() - 1);
+            if(solution.size() == 0)
+                node2 = -1;
+            else
+                node2 = randomInt(0, solution.size() - 1);
         }
     }
     else
@@ -106,14 +115,10 @@ void RandomLocalSearch::updateMoveSet(const Move &move)
         }
         case MoveType::SwapEdges:
         {
-            println("inSolution before update:\n{}", inSolution);
-            println("Updating move:");
-            move.print();
             for (int i = move.node1 + 1; i <= *move.node2; i++)
             {
                 inSolution[solution[i]] = i;
             }
-            println("inSolution after update:\n{}", inSolution);
             break;
         }
     }

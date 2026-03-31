@@ -37,6 +37,11 @@ int LocalSearch::calculateDeltaScore(const Move &move)
     {
         case MoveType::InsertNode:
         {
+            if(solution.size() == 0)
+            {
+                deltaScore += data->nodeProfits[move.node1];
+                break;
+            }
             int prev = solution[*move.node2];
             int next = solution[getNodeFromSolution(*move.node2 + 1)];
             deltaScore += data->nodeProfits[move.node1];
@@ -57,6 +62,11 @@ int LocalSearch::calculateDeltaScore(const Move &move)
         }
         case MoveType::SwapNodes:
         {
+            if(solution.size() <= 3)
+            {
+                deltaScore = 0;
+                break;
+            }
             int prev1 = solution[getNodeFromSolution(move.node1 - 1)];
             int curr1 = solution[move.node1];
             int next1 = solution[getNodeFromSolution(move.node1 + 1)];
@@ -76,6 +86,17 @@ int LocalSearch::calculateDeltaScore(const Move &move)
                 deltaScore -= data->distanceMatrix[curr1][next2];
                 break;
             }
+            if(curr2 == prev1)
+            {
+                deltaScore += data->distanceMatrix[curr1][next1];
+
+                deltaScore -= data->distanceMatrix[curr2][next1];
+
+                deltaScore += data->distanceMatrix[prev2][curr2];
+
+                deltaScore -= data->distanceMatrix[prev2][curr1];
+                break;
+            }
 
             deltaScore += data->distanceMatrix[prev1][curr1];
             deltaScore += data->distanceMatrix[curr1][next1];
@@ -93,11 +114,22 @@ int LocalSearch::calculateDeltaScore(const Move &move)
         }
         case MoveType::SwapEdges:
         {
+            if (solution.size() <= 3)
+            {
+                deltaScore = 0;
+                break;
+            }
             int curr1 = solution[move.node1];
             int next1 = solution[getNodeFromSolution(move.node1 + 1)];
 
             int curr2 = solution[*move.node2];
             int next2 = solution[getNodeFromSolution(*move.node2 + 1)];
+
+            if (next1 == curr2)
+            {
+                deltaScore = 0;
+                break;
+            }
 
             deltaScore += data->distanceMatrix[curr1][next1];
 
@@ -140,11 +172,7 @@ void LocalSearch::changeSolution(const Move &bestMove)
         }
         case MoveType::SwapEdges:
         {
-            println("Solution before change:\n{}", solution);
-            println("Applying move:");
-            bestMove.print();
             reverse(solution.begin() + bestMove.node1 + 1, solution.begin() + *bestMove.node2 + 1);
-            println("Solution after change:\n{}", solution);
             break;
         }
     }

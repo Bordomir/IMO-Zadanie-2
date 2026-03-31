@@ -23,9 +23,7 @@ public:
 
 
     RandomLocalSearch(DataLoader &data, vector<int> solution, MoveType neighbourhood, long long timeLimit, unsigned int seed = random_device{}()) : 
-        LocalSearch(data, solution, neighbourhood), 
-        bestSolution(solution), 
-        bestSolutionScore(calculateScore()),
+        LocalSearch(data, solution, neighbourhood),
         rng(seed),
         timeLimit(timeLimit) {};
     string getAlgorithmName() override;
