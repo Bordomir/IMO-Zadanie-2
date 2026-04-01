@@ -43,6 +43,25 @@ int main()
     solvers.emplace_back(make_unique<RandomSolver>(dataA));
     solvers.emplace_back(make_unique<KRegret>(dataA, startNode, 2));
 
+    // vector<int> solution = {5,2,1,0,8,10};
+
+    // RandomLocalSearch localSearch(dataA, solution, MoveType::SwapNodes, 50);
+    
+    // int score = localSearch.calculateScore();
+    // println("Initial score: {}", score);
+
+    // auto mockedMove = [&score, &localSearch, &solution](Move move) {
+    //     move.print();
+    //     move.deltaScore = localSearch.calculateDeltaScore(move);
+    //     println("Calculated delta score: {}", *move.deltaScore);
+    //     score += *move.deltaScore;
+    //     localSearch.changeSolution(move);
+    //     println("Before:\n{}\n Changed solution:\n{}",solution, localSearch.solution);
+    //     println("Score delta calculated: {} / Score: {}", score, localSearch.calculateScore());
+    //     solution = localSearch.solution;
+    // };
+
+
     for (auto &solver : solvers)
     {
         solver->solve();

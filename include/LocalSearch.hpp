@@ -44,7 +44,7 @@ public:
     LocalSearch(DataLoader &data, vector<int> solution, MoveType neighbourhood) : 
         data(&data), 
         solution(solution), 
-        solutionScore(0), 
+        solutionScore(calculateScore()), 
         moveSet(), 
         neighbourhoodUsed(neighbourhood) 
     {};

@@ -16,13 +16,14 @@
     implement setMoveSet
     implement chooseMove
     implement updateMoveSet
-DONE
+DONE weird solutions on SwapNode
 
 - CLass GreedyLocalSearch
     randomized process of checking moves, chooses first that is positive
     implement setMoveSet
     implement chooseMove
     implement updateMoveSet
+DONE seems fine maybe a little weird on SwapNode also 
 
 - CLass SteepLocalSearch
     checks all moves, chooses best one
@@ -35,9 +36,6 @@ DONE
 - Experiment
     Run 100 times on every data instance
     
-
-ERRORS:
- - Random SwapNodes wrong calculation? based on graph and score
 
 
 

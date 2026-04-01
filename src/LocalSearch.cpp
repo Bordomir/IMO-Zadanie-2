@@ -42,7 +42,7 @@ int LocalSearch::calculateDeltaScore(const Move &move)
                 deltaScore += data->nodeProfits[move.node1];
                 break;
             }
-            int prev = solution[*move.node2];
+            int prev = solution[getNodeFromSolution(*move.node2)];
             int next = solution[getNodeFromSolution(*move.node2 + 1)];
             deltaScore += data->nodeProfits[move.node1];
             deltaScore += data->distanceMatrix[prev][next];
@@ -147,7 +147,13 @@ int LocalSearch::calculateDeltaScore(const Move &move)
 
 int LocalSearch::getNodeFromSolution(int solutionIndex)
 {
-    return solutionIndex % solution.size();
+    int n = solution.size();
+    while(solutionIndex < 0) solutionIndex += n;
+    while (solutionIndex >= n) 
+    {
+        solutionIndex -= n;
+    }
+    return solutionIndex;
 }
 
 void LocalSearch::changeSolution(const Move &bestMove)
