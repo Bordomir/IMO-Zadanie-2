@@ -4,8 +4,10 @@
 #include <print>
 #include <vector>
 #include <string>
+#include <memory>
 
 #include "DataLoader.hpp"
+#include "Solver.hpp"
 
 using namespace std;
 
@@ -38,14 +40,17 @@ public:
     DataLoader *data;
     vector<int> solution;
     int solutionScore;
-    vector<Move> moveSet;
     MoveType neighbourhoodUsed;
+    vector<Move> moveSet;
 
+    LocalSearch(unique_ptr<Solver> &solver, MoveType neighbourhood) : 
+        data(solver->data), \
+        solution(solver->solution),
+        neighbourhoodUsed(neighbourhood)
+    {};
     LocalSearch(DataLoader &data, vector<int> solution, MoveType neighbourhood) : 
         data(&data), 
-        solution(solution), 
-        solutionScore(calculateScore()), 
-        moveSet(), 
+        solution(solution),
         neighbourhoodUsed(neighbourhood) 
     {};
     virtual string getAlgorithmName() = 0;

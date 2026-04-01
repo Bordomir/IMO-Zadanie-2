@@ -5,24 +5,29 @@
 #include <chrono>
 #include <string>
 #include <optional>
+#include <memory>
 
 #include "LocalSearch.hpp"
 #include "DataLoader.hpp"
+#include "Solver.hpp"
 
 using namespace std;
 
 class RandomLocalSearch : public LocalSearch
 {
 public:
+    mt19937 rng;
+    double timeLimit;
     vector<int> bestSolution;
     int bestSolutionScore;
-    mt19937 rng;
-    long long timeLimit;
     chrono::time_point<chrono::high_resolution_clock> startTime;
     vector<int> inSolution;
 
-
-    RandomLocalSearch(DataLoader &data, vector<int> solution, MoveType neighbourhood, long long timeLimit, unsigned int seed = random_device{}()) : 
+    RandomLocalSearch(unique_ptr<Solver> &solver, MoveType neighbourhood, double timeLimit, unsigned int seed = random_device{}()) : 
+        LocalSearch(solver, neighbourhood), 
+        rng(seed), 
+        timeLimit(timeLimit) {};
+    RandomLocalSearch(DataLoader &data, vector<int> solution, MoveType neighbourhood, double timeLimit, unsigned int seed = random_device{}()) : 
         LocalSearch(data, solution, neighbourhood),
         rng(seed),
         timeLimit(timeLimit) {};

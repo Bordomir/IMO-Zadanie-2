@@ -13,7 +13,6 @@ string RandomLocalSearch::getAlgorithmName()
 }
 void RandomLocalSearch::setMoveSet()
 {
-    solutionScore = calculateScore();
     bestSolution = solution;
     bestSolutionScore = solutionScore;
     startTime = chrono::high_resolution_clock::now();
@@ -25,7 +24,7 @@ optional<Move> RandomLocalSearch::chooseMove()
 {
     // Sprawdzenie limitu czasu
     auto currentTime = chrono::high_resolution_clock::now();
-    auto elapsedTime = chrono::duration_cast<chrono::milliseconds>(currentTime - startTime).count();
+    auto elapsedTime = chrono::duration<double, std::milli>(currentTime-startTime).count();
     if (elapsedTime >= timeLimit)
     {
         solution = bestSolution;
@@ -81,7 +80,6 @@ optional<Move> RandomLocalSearch::chooseMove()
 
 void RandomLocalSearch::updateMoveSet(const Move &move)
 {
-    solutionScore += *move.deltaScore;
     if (solutionScore > bestSolutionScore)
     {
         bestSolution = solution;

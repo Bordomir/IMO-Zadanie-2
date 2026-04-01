@@ -44,6 +44,7 @@ DONE seems fine maybe a little weird on SwapNode also
     keeping calculated deltaScore of moves in memory (matrix per move type (insert/remove and swap) using data indexes and not solution indexes)
     usefull to have another vector with mapping of every node to its position in solution that also has to be updated during move execution
     updating values of deltaScore after executing move
+(It is a Topic of next project)
 
 - Class SolutionHolder
     inherited by solvers,

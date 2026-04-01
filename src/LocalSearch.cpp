@@ -13,6 +13,7 @@ using namespace filesystem;
 
 void LocalSearch::improve()
 {
+    solutionScore = calculateScore();
     setMoveSet();
     bool hasImproved = true;
     while (hasImproved)
@@ -25,6 +26,7 @@ void LocalSearch::improve()
         {
             hasImproved = true;
             changeSolution(*bestMove);
+            solutionScore += *bestMove->deltaScore;
             updateMoveSet(*bestMove);
         }
     }

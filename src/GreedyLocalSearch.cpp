@@ -70,7 +70,6 @@ optional<Move> GreedyLocalSearch::chooseMove()
             return move;
         }
     }
-    solutionScore = calculateScore();
     return nullopt;
 }
 

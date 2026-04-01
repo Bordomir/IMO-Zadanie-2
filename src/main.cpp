@@ -7,6 +7,7 @@
 #include <ranges>
 #include <algorithm>
 #include <utility>
+#include <chrono>
 
 #include "../include/DataLoader.hpp"
 #include "../include/Solver.hpp"
@@ -15,195 +16,230 @@
 #include "../include/LocalSearch.hpp"
 #include "../include/RandomLocalSearch.hpp"
 #include "../include/GreedyLocalSearch.hpp"
+#include "../include/SteepLocalSearch.hpp"
 
 using namespace std;
 
-struct Statistic {
+struct Statistic
+{
     string data;
-    string algorithm;
+    string solver;
+    string localSearch;
     double average = 0;
-    int min = numeric_limits<int>::max();
-    int max = numeric_limits<int>::min();
+    double min = numeric_limits<double>::max();
+    double max = numeric_limits<double>::min();
 
-    Statistic(string data, string algorithm) : data(move(data)), algorithm(move(algorithm)) {}
+    Statistic(string data, string solver, string localSearch) : data(move(data)), solver(move(solver)), localSearch(move(localSearch)) {};
+    void update(double value)
+    {
+        average += value;
+        min = std::min(min, value);
+        max = std::max(max, value);
+    }
+    void print() const
+    {
+        std::println("{};{};{};{:.4f};{:.4f};{:.4f}", data, solver, localSearch, average, min, max);
+    }
 };
-
-pair<Statistic, Statistic> runTests(unique_ptr<Solver> &solver, int numRuns, mt19937 &rng, const string &data);
-
-void printStatistics(vector<Statistic> &statistics);
 
 int main()
 {
-    DataLoader dataA("../data/TSPA.csv");
-    DataLoader dataB("../data/TSPB.csv");
+    DataLoader dataA("../data/TSPA.csv", "DataA");
+    DataLoader dataB("../data/TSPB.csv", "DataB");
 
     int startNode = 0;
-    
+
     vector<unique_ptr<Solver>> solvers;
+    solvers.reserve(4);
     solvers.emplace_back(make_unique<RandomSolver>(dataA));
+    solvers.emplace_back(make_unique<RandomSolver>(dataB));
     solvers.emplace_back(make_unique<KRegret>(dataA, startNode, 2));
-
-    // vector<int> solution = {5,2,1,0,8,10};
-
-    // RandomLocalSearch localSearch(dataA, solution, MoveType::SwapNodes, 50);
-    
-    // int score = localSearch.calculateScore();
-    // println("Initial score: {}", score);
-
-    // auto mockedMove = [&score, &localSearch, &solution](Move move) {
-    //     move.print();
-    //     move.deltaScore = localSearch.calculateDeltaScore(move);
-    //     println("Calculated delta score: {}", *move.deltaScore);
-    //     score += *move.deltaScore;
-    //     localSearch.changeSolution(move);
-    //     println("Before:\n{}\n Changed solution:\n{}",solution, localSearch.solution);
-    //     println("Score delta calculated: {} / Score: {}", score, localSearch.calculateScore());
-    //     solution = localSearch.solution;
-    // };
+    solvers.emplace_back(make_unique<KRegret>(dataB, startNode, 2));
 
 
-    for (auto &solver : solvers)
-    {
-        solver->solve();
-        solver->saveToFile("DataA");
-        println("Solver algorithm: {} on data A", solver->getAlgorithmName());
-        solver->print();
-
-        solver->data = &dataB;
-    }
-    vector<int> solutionR = solvers[0]->solution;
-    vector<int> solutionKR = solvers[1]->solution;
-    
     vector<unique_ptr<LocalSearch>> localSearches;
-    localSearches.emplace_back(make_unique<RandomLocalSearch>(dataA, solutionR, MoveType::SwapNodes, 50));
-    localSearches.emplace_back(make_unique<RandomLocalSearch>(dataA, solutionR, MoveType::SwapEdges, 50));
-    localSearches.emplace_back(make_unique<GreedyLocalSearch>(dataA, solutionR, MoveType::SwapNodes));
-    localSearches.emplace_back(make_unique<GreedyLocalSearch>(dataA, solutionR, MoveType::SwapEdges));
+    localSearches.reserve(4);
+    localSearches.emplace_back(make_unique<GreedyLocalSearch>(solvers[0], MoveType::SwapNodes));
+    localSearches.emplace_back(make_unique<GreedyLocalSearch>(solvers[0], MoveType::SwapEdges));
+    localSearches.emplace_back(make_unique<SteepLocalSearch>(solvers[0], MoveType::SwapNodes));
+    localSearches.emplace_back(make_unique<SteepLocalSearch>(solvers[0], MoveType::SwapEdges));
 
-    // DataA
-    for (auto &localSearch : localSearches)
-    {
-        localSearch->improve();
-        localSearch->saveToFile("DataA_SolutionR");
-        println("Local search algorithm: {} on random solution from data A", localSearch->getAlgorithmName());
-        localSearch->print();
+    // Experiment
+    mt19937 rng{random_device{}()};
+    int numRuns = 100;
+    int maxNode = min(dataA.numNodes, dataB.numNodes);
+    int maxTestsPossible = min(numRuns, maxNode);
 
-        localSearch->solution = solutionKR;
-        localSearch->improve();
-        localSearch->saveToFile("DataA_SolutionKR");
-        println("Local search algorithm: {} on k-regret solution from data A", localSearch->getAlgorithmName());
-        localSearch->print();
+    std::println("Running {} tests", maxTestsPossible);
 
-        localSearch->data = &dataB;
-    }
-
-    // DataB
-    for (auto &solver : solvers)
-    {
-        solver->solve();
-        solver->saveToFile("DataB");
-        println("Solver algorithm: {} on data B", solver->getAlgorithmName());
-        solver->print();
-    }
-    solutionR = solvers[0]->solution;
-    solutionKR = solvers[1]->solution;
-    
-    for (auto &localSearch : localSearches)
-    {
-        localSearch->solution = solutionR;
-        localSearch->improve();
-        localSearch->saveToFile("DataB_SolutionR");
-        println("Local search algorithm: {} on random solution from data B", localSearch->getAlgorithmName());
-        localSearch->print();
-
-        localSearch->solution = solutionKR;
-        localSearch->improve();
-        localSearch->saveToFile("DataB_SolutionKR");
-        println("Local search algorithm: {} on k-regret solution from data B", localSearch->getAlgorithmName());
-        localSearch->print();
-    }
-
-    // int numRuns = 200;
-    // vector<Statistic> lengthStatistics;
-    // vector<Statistic> scoreStatistics;
-    // mt19937 rng{random_device{}()};
-    // // DataA
-    // for(auto &solver : solvers)
-    // {
-    //     auto [statL, statS] = runTests(solver, numRuns, rng, "DataA");
-    //     lengthStatistics.push_back(statL);
-    //     scoreStatistics.push_back(statS);
-    //     solver->data = &dataB;
-    // }    
-    // // DataB
-    // for(auto &solver : solvers)
-    // {
-    //     auto [statL, statS] = runTests(solver, numRuns, rng, "DataB");
-    //     lengthStatistics.push_back(statL);
-    //     scoreStatistics.push_back(statS);
-    // }
-
-    // println("Length statistics:");
-    // printStatistics(lengthStatistics);
-    // println("Score statistics:");
-    // printStatistics(scoreStatistics);
-
-    return 0;
-}
-pair<Statistic, Statistic> runTests(unique_ptr<Solver> &solver, int numRuns, mt19937 &rng, const string &data)
-{
-    Statistic statLength{
-        data,
-        solver->getAlgorithmName()
-    };
-    Statistic statScore{
-        data,
-        solver->getAlgorithmName()
-    };
-
-    int maxTestsPossible = min(numRuns, solver->data->numNodes);
-
-    println("Running {} tests on {} with {}", maxTestsPossible, statLength.algorithm, data);
-
-    auto allNodesView = views::iota(0, solver->data->numNodes);
+    auto allNodesView = views::iota(0, maxNode);
 
     vector<int> startingNodes(maxTestsPossible);
     ranges::sample(allNodesView, startingNodes.begin(), maxTestsPossible, rng);
 
+    vector<Statistic> scoreStatistics;
+    scoreStatistics.reserve(solvers.size() * localSearches.size());
+    vector<Statistic> timeStatistics;
+    timeStatistics.reserve(solvers.size() * localSearches.size());
+    vector<Statistic> scoreStatisticsForSolver;
+    scoreStatisticsForSolver.reserve(solvers.size());
+    vector<Statistic> timeStatisticsForSolver;
+    timeStatisticsForSolver.reserve(solvers.size());
+    for (auto &solver : solvers)
+    {
+        scoreStatisticsForSolver.emplace_back(
+            solver->data->getName(),
+            solver->getAlgorithmName(),
+            "None");
+        timeStatisticsForSolver.emplace_back(
+            solver->data->getName(),
+            solver->getAlgorithmName(),
+            "None");
+        for (auto &localSearch : localSearches)
+        {
+            scoreStatistics.emplace_back(
+                solver->data->getName(),
+                solver->getAlgorithmName(),
+                localSearch->getAlgorithmName());
+            timeStatistics.emplace_back(
+                solver->data->getName(),
+                solver->getAlgorithmName(),
+                localSearch->getAlgorithmName());
+        }
+    }
+
+    chrono::time_point<chrono::high_resolution_clock> startTime, endTime;
     for (int startNode : startingNodes)
     {
-        solver->startNode = startNode;
-        solver->solve();
-
-        int value = solver->solutionScoreAfterIPhaseI;
-
-        statLength.average += value;
-        statLength.min = min(statLength.min, value);
-        if(statLength.max < value)
+        for (size_t i = 0; i < solvers.size(); i++)
         {
-            statLength.max = value;
-        }
+            const auto &solver = solvers[i];
 
-        value = solver->solutionScore;
+            solver->startNode = startNode;
 
-        statScore.average += value;
-        statScore.min = min(statScore.min, value);
-        if(statScore.max < value)
-        {
-            statScore.max = value;
-            solver->saveToFile(data);
+            startTime = chrono::high_resolution_clock::now();
+            solver->solve();
+            endTime = chrono::high_resolution_clock::now();
+
+            if (solver->solutionScore > scoreStatisticsForSolver[i].max)
+            {
+                solver->saveToFile(solver->data->getName());
+            }
+
+            scoreStatisticsForSolver[i].update(solver->solutionScore);
+            timeStatisticsForSolver[i].update(chrono::duration<double, std::milli>(endTime - startTime).count());
+
+            for (size_t j = 0; j < localSearches.size(); j++)
+            {
+                const auto &localSearch = localSearches[j];
+
+                localSearch->data = solver->data;
+                localSearch->solution = solver->solution;
+
+                startTime = chrono::high_resolution_clock::now();
+                localSearch->improve();
+                endTime = chrono::high_resolution_clock::now();
+
+                int index = i * localSearches.size() + j;
+                if (localSearch->solutionScore > scoreStatistics[index].max)
+                {
+                    localSearch->saveToFile(format("{}_{}", solver->data->getName(), solver->getAlgorithmName()));
+                }
+
+                scoreStatistics[index].update(localSearch->solutionScore);
+                timeStatistics[index].update(chrono::duration<double, std::milli>(endTime - startTime).count());
+            }
         }
     }
-    statLength.average /= maxTestsPossible;
-    statScore.average /= maxTestsPossible;
-    return {statLength, statScore};
-}
-
-void printStatistics(vector<Statistic> &statistics)
-{
-    for(auto &stat : statistics)
+    for (auto &stat : scoreStatisticsForSolver)
+        stat.average /= maxTestsPossible;
+    for (auto &stat : timeStatisticsForSolver)
+        stat.average /= maxTestsPossible;
+    for (auto &stat : scoreStatistics)
+        stat.average /= maxTestsPossible;
+    double randomTimeLimit = numeric_limits<double>::min();
+    for (auto &stat : timeStatistics)
     {
-        println("Alg: {:<28} | Data: {:<5} | Avg: {:>10.2f} | Min: {:>10} | Max: {:>10}",
-            stat.algorithm, stat.data, stat.average, stat.min, stat.max);
+        stat.average /= maxTestsPossible;
+        randomTimeLimit = max(randomTimeLimit, stat.average);
     }
+    
+    vector<unique_ptr<RandomLocalSearch>> randomLocalSearches;
+    randomLocalSearches.reserve(2);
+    randomLocalSearches.emplace_back(make_unique<RandomLocalSearch>(solvers[0], MoveType::SwapNodes, randomTimeLimit));
+    randomLocalSearches.emplace_back(make_unique<RandomLocalSearch>(solvers[0], MoveType::SwapEdges, randomTimeLimit));
+
+    vector<Statistic> scoreStatisticsForRandomLocalSearch;
+    scoreStatisticsForRandomLocalSearch.reserve(solvers.size() * randomLocalSearches.size());
+    vector<Statistic> timeStatisticsForRandomLocalSearch;
+    timeStatisticsForRandomLocalSearch.reserve(solvers.size() * randomLocalSearches.size());
+    for (auto &solver : solvers)
+    {
+        for (auto &localSearch : randomLocalSearches)
+        {
+            scoreStatisticsForRandomLocalSearch.emplace_back(
+                solver->data->getName(),
+                solver->getAlgorithmName(),
+                localSearch->getAlgorithmName());
+            timeStatisticsForRandomLocalSearch.emplace_back(
+                solver->data->getName(),
+                solver->getAlgorithmName(),
+                localSearch->getAlgorithmName());
+        }
+    }
+    for (int startNode : startingNodes)
+    {
+        for (size_t i = 0; i < solvers.size(); i++)
+        {
+            const auto &solver = solvers[i];
+
+            solver->startNode = startNode;
+            solver->solve();
+
+            for (size_t j = 0; j < randomLocalSearches.size(); j++)
+            {
+                const auto &localSearch = randomLocalSearches[j];
+
+                localSearch->data = solver->data;
+                localSearch->solution = solver->solution;
+
+                startTime = chrono::high_resolution_clock::now();
+                localSearch->improve();
+                endTime = chrono::high_resolution_clock::now();
+
+                int index = i * randomLocalSearches.size() + j;
+                if (localSearch->solutionScore > scoreStatistics[index].max)
+                {
+                    localSearch->saveToFile(format("{}_{}", solver->data->getName(), solver->getAlgorithmName()));
+                }
+
+                scoreStatisticsForRandomLocalSearch[index].update(localSearch->solutionScore);
+                timeStatisticsForRandomLocalSearch[index].update(chrono::duration<double, std::milli>(endTime - startTime).count());
+            }
+        }
+    }
+    for(auto &stat : scoreStatisticsForRandomLocalSearch) stat.average /= maxTestsPossible;
+    for(auto &stat : timeStatisticsForRandomLocalSearch) stat.average /= maxTestsPossible;
+
+    auto allScoreStatistics = {
+        scoreStatisticsForSolver,
+        scoreStatistics,
+        scoreStatisticsForRandomLocalSearch
+    };
+
+    println("\nScore statistics:");
+    for(const auto &stat : allScoreStatistics | views::join)
+        stat.print();
+
+    auto allTimeStatistics = {
+        timeStatisticsForSolver,
+        timeStatistics,
+        timeStatisticsForRandomLocalSearch
+    };
+
+    println("\nTime statistics:");
+    for(const auto &stat : allTimeStatistics | views::join)
+        stat.print();
+
+    return 0;
 }

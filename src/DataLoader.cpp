@@ -10,7 +10,8 @@
 
 using namespace std;
 
-DataLoader::DataLoader(const string &filename)
+DataLoader::DataLoader(const string &filename, const optional<string> &name)
+    : name(name ? *name : filename)
 {
     // ios::binary pozostawia \r\n które są uzwględniane w rozmiarze pliku
     ifstream file(filename, ios::binary);
