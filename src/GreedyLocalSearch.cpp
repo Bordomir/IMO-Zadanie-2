@@ -18,62 +18,147 @@ void GreedyLocalSearch::setMoveSet()
 { 
     moveSet.clear();
     int n = solution.size();
-    vector<bool>inSolution(data->numNodes, false);
 
-    // RemoveNode moves - usunięcie wierzchołka solution[node1]
-    for (int i = 0; i < n; i++)
-    {
-        inSolution[solution[i]] = true;
-        moveSet.emplace_back(MoveType::RemoveNode, solution[i], i);
-    }
+    indices = vector<int>(data->numNodes);
+    solutionIndices1 = vector<int>(n);
+    solutionIndices2 = vector<int>(n);
+    iota(indices.begin(), indices.end(), 0);
+    iota(solutionIndices1.begin(), solutionIndices1.end(), 0);
+    iota(solutionIndices2.begin(), solutionIndices2.end(), 0);
+    
+    inSolution = vector<int>(data->numNodes, -1);
+    for (size_t i = 0; i < solution.size(); i++)
+        inSolution[solution[i]] = i;
 
-    // InsertNode moves - wstawienie wierzchołka data[node1] po wierzchołku solution[node2]
-    for (int node1 = 0; node1 < data->numNodes; node1++)
-    {
-        if (inSolution[node1])
-            continue;
-
-        if(n == 0)
-        {
-            moveSet.emplace_back(MoveType::InsertNode, node1, -1);
-            continue;
-        }
-
-        for (int node2 = 0; node2 < n; node2++)
-        {
-            moveSet.emplace_back(MoveType::InsertNode, node1, node2);
-        }
-    }
-
-  // SwapNodes moves - zamiana wierzchołków solution[node1] i solution[node2] (node1 < node2)
-  // or SwapEdges moves- zamiana krawędzi solution[node1] -> solution[node1 + 1] z krawędzią solution[node2] -> solution[node2 + 1] (node1 < node2)
-    for (int node1 = 0; node1 < n; node1++)
-    {
-        for (int node2 = node1 + 1; node2 < n; node2++)
-        {
-            moveSet.emplace_back(neighbourhoodUsed, node1, node2);
-        }
-    }
+    isChangingNodes = {false, true};
 }
 
 optional<Move> GreedyLocalSearch::chooseMove()
 {
-    vector<int> indices(moveSet.size());
-    iota(indices.begin(), indices.end(), 0);
     shuffle(indices.begin(), indices.end(), rng);
-    for(int i : indices)
+    shuffle(solutionIndices1.begin(), solutionIndices1.end(), rng);
+    shuffle(solutionIndices2.begin(), solutionIndices2.end(), rng);
+    shuffle(isChangingNodes.begin(), isChangingNodes.end(), rng);
+
+    size_t indicesIndex = 0;
+    bool hasTriedToRemove;
+    optional<MoveType> moveType;
+    int node1, node2;
+    for(int i : solutionIndices1)
     {
-        Move move = moveSet[i];
-        move.deltaScore = calculateDeltaScore(move);
-        if(*move.deltaScore > 0)
+        hasTriedToRemove = false;
+        for (int j : solutionIndices2)
         {
-            return move;
+            for (bool isChanging : isChangingNodes)
+            {
+                moveType = nullopt;
+                if(isChanging && !hasTriedToRemove)
+                {
+                    node1 = indices[indicesIndex];
+                    if(inSolution[node1] >= 0)
+                    {
+                        hasTriedToRemove = true;
+                        moveType = MoveType::RemoveNode;
+                        node2 = inSolution[node1];
+                    } else
+                    {
+                        moveType = MoveType::InsertNode;
+                        node2 = j;
+                    }
+
+                }else
+                {
+                    if(i < j)
+                    {
+                        moveType = neighbourhoodUsed;
+                        node1 = i;
+                        node2 = j;
+                    }
+                }
+
+                if(moveType)
+                {
+                    Move move(*moveType, node1, node2);
+                    move.deltaScore = calculateDeltaScore(move);
+                    if(*move.deltaScore > 0)
+                    {
+                        return move;
+                    }
+                }
+            }
         }
+        indicesIndex++;
+    }
+    while(indicesIndex < indices.size())
+    {
+        node1 = indices[indicesIndex];
+        if(inSolution[node1] >= 0)
+        {
+            Move move(MoveType::RemoveNode, node1, inSolution[node1]);
+            move.deltaScore = calculateDeltaScore(move);
+            if(*move.deltaScore > 0)
+            {
+                return move;
+            }
+        } else
+        {
+            for (int j : solutionIndices2)
+            {
+                Move move(MoveType::InsertNode, node1, j);
+                move.deltaScore = calculateDeltaScore(move);
+                if(*move.deltaScore > 0)
+                {
+                    return move;
+                }
+            }
+        }
+        indicesIndex++;
     }
     return nullopt;
 }
 
 void GreedyLocalSearch::updateMoveSet(const Move &move)
 {
-    setMoveSet();
+    const int n = solution.size();
+    switch (move.type)
+    {
+        case MoveType::InsertNode:
+        {
+            solutionIndices1.push_back(n-1);
+            solutionIndices2.push_back(n-1);
+
+            int newNodeSolutionIndex = *move.node2 + 1;
+            inSolution[move.node1] = newNodeSolutionIndex++;
+            for (; newNodeSolutionIndex < n; newNodeSolutionIndex++)
+                inSolution[solution[newNodeSolutionIndex]]++;
+            break;
+        }
+        case MoveType::RemoveNode:
+        {
+            solutionIndices1.resize(n);
+            solutionIndices2.resize(n);
+            iota(solutionIndices1.begin(), solutionIndices1.end(), 0);
+            iota(solutionIndices2.begin(), solutionIndices2.end(), 0);
+
+            int removedNodeSolutionIndex = *move.node2;
+            inSolution[move.node1] = -1;
+            for (; removedNodeSolutionIndex < n; removedNodeSolutionIndex++)
+                inSolution[solution[removedNodeSolutionIndex]]--;
+            break;
+        }
+        case MoveType::SwapNodes:
+        {
+            inSolution[solution[move.node1]] = move.node1;
+            inSolution[solution[*move.node2]] = *move.node2;
+            break;
+        }
+        case MoveType::SwapEdges:
+        {
+            for (int i = move.node1 + 1; i <= *move.node2; i++)
+            {
+                inSolution[solution[i]] = i;
+            }
+            break;
+        }
+    }
 }
