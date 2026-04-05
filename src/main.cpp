@@ -108,7 +108,7 @@ int main()
         }
     }
 
-    chrono::time_point<chrono::high_resolution_clock> startTime, endTime;
+    chrono::time_point<chrono::steady_clock> startTime, endTime;
     for (int startNode : startingNodes)
     {
         for (size_t i = 0; i < solvers.size(); i++)
@@ -117,9 +117,9 @@ int main()
 
             solver->startNode = startNode;
 
-            startTime = chrono::high_resolution_clock::now();
+            startTime = chrono::steady_clock::now();
             solver->solve();
-            endTime = chrono::high_resolution_clock::now();
+            endTime = chrono::steady_clock::now();
 
             if (solver->solutionScore > scoreStatisticsForSolver[i].max)
             {
@@ -136,9 +136,9 @@ int main()
                 localSearch->data = solver->data;
                 localSearch->solution = solver->solution;
 
-                startTime = chrono::high_resolution_clock::now();
+                startTime = chrono::steady_clock::now();
                 localSearch->improve();
-                endTime = chrono::high_resolution_clock::now();
+                endTime = chrono::steady_clock::now();
 
                 int index = i * localSearches.size() + j;
                 if (localSearch->solutionScore > scoreStatistics[index].max)
@@ -203,9 +203,9 @@ int main()
                 localSearch->data = solver->data;
                 localSearch->solution = solver->solution;
 
-                startTime = chrono::high_resolution_clock::now();
+                startTime = chrono::steady_clock::now();
                 localSearch->improve();
-                endTime = chrono::high_resolution_clock::now();
+                endTime = chrono::steady_clock::now();
 
                 int index = i * randomLocalSearches.size() + j;
                 if (localSearch->solutionScore > scoreStatisticsForRandomLocalSearch[index].max)
