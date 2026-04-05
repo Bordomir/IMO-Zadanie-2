@@ -27,7 +27,7 @@ struct Statistic
     string localSearch;
     double average = 0;
     double min = numeric_limits<double>::max();
-    double max = numeric_limits<double>::min();
+    double max = numeric_limits<double>::lowest();
 
     Statistic(string data, string solver, string localSearch) : data(move(data)), solver(move(solver)), localSearch(move(localSearch)) {};
     void update(double value)
@@ -208,7 +208,7 @@ int main()
                 endTime = chrono::high_resolution_clock::now();
 
                 int index = i * randomLocalSearches.size() + j;
-                if (localSearch->solutionScore > scoreStatistics[index].max)
+                if (localSearch->solutionScore > scoreStatisticsForRandomLocalSearch[index].max)
                 {
                     localSearch->saveToFile(format("{}_{}", solver->data->getName(), solver->getAlgorithmName()));
                 }
