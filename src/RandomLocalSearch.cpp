@@ -15,7 +15,7 @@ void RandomLocalSearch::setMoveSet()
 {
     bestSolution = solution;
     bestSolutionScore = solutionScore;
-    startTime = chrono::high_resolution_clock::now();
+    startTime = chrono::steady_clock::now();
     inSolution = vector<int>(data->numNodes, -1);
     for (size_t i = 0; i < solution.size(); i++)
         inSolution[solution[i]] = i;
@@ -23,7 +23,7 @@ void RandomLocalSearch::setMoveSet()
 optional<Move> RandomLocalSearch::chooseMove()
 {
     // Sprawdzenie limitu czasu
-    auto currentTime = chrono::high_resolution_clock::now();
+    auto currentTime = chrono::steady_clock::now();
     auto elapsedTime = chrono::duration<double, std::milli>(currentTime-startTime).count();
     if (elapsedTime >= timeLimit)
     {

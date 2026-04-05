@@ -20,7 +20,7 @@ public:
     double timeLimit;
     vector<int> bestSolution;
     int bestSolutionScore;
-    chrono::time_point<chrono::high_resolution_clock> startTime;
+    chrono::time_point<chrono::steady_clock> startTime;
     vector<int> inSolution;
 
     RandomLocalSearch(unique_ptr<Solver> &solver, MoveType neighbourhood, double timeLimit, unsigned int seed = random_device{}()) : 
